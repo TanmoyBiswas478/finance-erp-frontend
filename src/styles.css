@@ -1,1 +1,716 @@
-/* You can add global styles to this file, and also import other style files */
+/* ============================================================
+   FINANCIAL ERP — THEME
+   A ledger-console system for someone running a strict,
+   rules-based, multi-bank cash setup.
+
+   Type roles:
+     Display  — Fraunces      (headers, the one characterful voice)
+     Body     — Inter         (labels, copy, UI chrome)
+     Figures  — JetBrains Mono (every rupee amount — tabular, exact)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ---- Palette: warm paper ledger ---- */
+  --bg: #f2eee3;
+  --surface: #ffffff;
+  --surface-alt: #faf7ee;
+  --ink: #1c1f26;
+  --ink-muted: #6c7280;
+  --border: #e3ddc9;
+  --border-strong: #d3cbb0;
+
+  /* ---- Accent: brass (stamp / seal, not the usual AI terracotta) ---- */
+  --brass: #a9761f;
+  --brass-deep: #7d5817;
+  --brass-tint: #f4e8cf;
+
+  /* ---- Semantic signal colors (drive real dynamic state) ---- */
+  --green: #2f7d54;
+  --green-bg: #e5f2ea;
+  --red: #b8402a;
+  --red-bg: #f9e7e2;
+  --amber: #b5791b;
+  --amber-bg: #f7ecd6;
+  --blue: #2d5b96;
+  --blue-bg: #e6eef8;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-card: 0 1px 2px rgba(28, 31, 38, 0.04), 0 8px 24px -12px rgba(28, 31, 38, 0.12);
+}
+
+/* ---- Dark mode overrides (toggled on <body> by toggleDarkMode()) ---- */
+body.dark-theme {
+  --bg: #0d1017;
+  --surface: #161a23;
+  --surface-alt: #1c212c;
+  --ink: #edeef2;
+  --ink-muted: #9aa1b0;
+  --border: #2a2f3b;
+  --border-strong: #363c4a;
+
+  --brass: #d7a53f;
+  --brass-deep: #efc36a;
+  --brass-tint: #2c2413;
+
+  --green: #4cae7f;
+  --green-bg: #123423;
+  --red: #e2725a;
+  --red-bg: #3a1a15;
+  --amber: #e0a944;
+  --amber-bg: #362a10;
+  --blue: #7ba6e0;
+  --blue-bg: #17263c;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -14px rgba(0, 0, 0, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    padding: 10px;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brass); }
+
+/* Visible keyboard focus everywhere */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   DASHBOARD SHELL
+   ============================================================ */
+
+.fin-dashboard {
+  padding: 24px;
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+}
+
+.fin-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.fin-header__eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 600;
+}
+
+.fin-header h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 30px;
+  letter-spacing: -0.01em;
+  margin: 2px 0 18px 0;
+}
+
+.fin-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0 0 22px 0;
+}
+
+/* ---- Top control bar ---- */
+.fin-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fin-topbar__group {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.btn:hover { filter: brightness(1.06); }
+.btn:active { transform: translateY(1px); }
+
+.btn--pdf { background: var(--red); color: #fff; }
+.btn--excel { background: var(--green); color: #fff; }
+
+.btn--theme {
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 999px;
+  padding: 9px 18px;
+}
+
+body.dark-theme .btn--theme {
+  background: var(--brass-tint);
+  color: var(--brass-deep);
+}
+
+/* ============================================================
+   CARDS (shared)
+   ============================================================ */
+
+.fin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+}
+
+.fin-card__title {
+  margin: 0 0 4px 0;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fin-card__subtitle {
+  color: var(--ink-muted);
+  font-size: 13px;
+  margin: 0 0 16px 0;
+}
+
+/* Manual dark-card hook (bound via [ngClass]="{'dark-card': isDarkMode}") */
+.dark-card {
+  background: var(--surface-alt);
+}
+
+/* ============================================================
+   HERO — Current month expense
+   ============================================================ */
+
+.fin-hero {
+  background: var(--red-bg);
+  border: 1px solid color-mix(in srgb, var(--red) 25%, var(--border));
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fin-hero__label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red);
+  font-weight: 700;
+}
+
+.fin-hero__amount {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--red);
+}
+
+/* ============================================================
+   CHART CARD
+   ============================================================ */
+
+.chart-card {
+  margin-bottom: 20px;
+  max-width: 500px;
+}
+
+/* ============================================================
+   BUDGET RADAR — ruler-tick gauge signature element
+   ============================================================ */
+
+.budget-card {
+  margin-bottom: 20px;
+  max-width: 500px;
+}
+
+.budget-row {
+  margin-bottom: 18px;
+}
+
+.budget-row:last-child {
+  margin-bottom: 0;
+}
+
+.budget-row__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+  gap: 10px;
+}
+
+.budget-row__label {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.budget-row__value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.budget-track {
+  position: relative;
+  width: 100%;
+  background-color: var(--border);
+  border-radius: 3px;
+  height: 8px;
+  /* ruler ticks */
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.08) 0,
+    rgba(0, 0, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 10%
+  );
+}
+
+body.dark-theme .budget-track {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0,
+    rgba(255, 255, 255, 0.08) 1px,
+    transparent 1px,
+    transparent 10%
+  );
+}
+
+.budget-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease-in-out;
+}
+
+.budget-note {
+  margin-top: 4px;
+  display: block;
+  font-size: 12px;
+}
+
+.budget-empty {
+  color: var(--ink-muted);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* ============================================================
+   FINANCIAL PLAYBOOK — ledger stamp cards
+   ============================================================ */
+
+.playbook-card {
+  margin-bottom: 20px;
+  max-width: 100%;
+}
+
+.playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.playbook-item {
+  position: relative;
+  padding: 14px 14px 14px 16px;
+  border-left: 3px solid var(--item-accent, var(--brass));
+  background-color: var(--surface-alt);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.playbook-item__title {
+  margin: 0 0 6px 0;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--item-accent, var(--brass));
+}
+
+.playbook-item__rule {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.playbook-item__rule strong {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.tag--stop { color: var(--red); font-weight: 600; }
+.tag--go { color: var(--green); font-weight: 600; }
+
+/* ============================================================
+   TWO/THREE COLUMN LAYOUT
+   ============================================================ */
+
+.fin-columns {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.fin-column {
+  flex: 1;
+  min-width: 300px;
+}
+
+.fin-column--emi {
+  margin-top: 20px;
+}
+
+.fin-column h3,
+.fin-columns h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 17px;
+  margin: 0 0 12px 0;
+}
+
+/* ---- Bank accounts ---- */
+
+.account-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.account-card__bank {
+  margin: 0;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.account-card__role {
+  margin: 5px 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.account-card__balance {
+  margin: 5px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.account-card__mab {
+  color: var(--red);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ---- Credit cards ---- */
+
+.cc-card {
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  background: var(--surface-alt);
+}
+
+.cc-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.cc-card__name {
+  margin: 0;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.cc-card__bill {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cc-card__limit {
+  margin: 10px 0 5px 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.cc-card__limit-avail {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.cc-card__limit-total {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cc-card__breakdown {
+  display: flex;
+  gap: 18px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.cc-card__stat-label {
+  color: var(--ink-muted);
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.cc-card__stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.cc-card__stat-value--unbilled { color: var(--amber); }
+.cc-card__stat-value--billed { color: var(--red); }
+
+.cc-card__btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13.5px;
+  transition: filter 0.12s ease;
+}
+
+.cc-card__btn:hover:not(:disabled) { filter: brightness(1.08); }
+.cc-card__btn:disabled { cursor: not-allowed; }
+
+/* ---- EMIs ---- */
+
+.emi-card {
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, var(--border));
+  background-color: var(--amber-bg);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.emi-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.emi-card__name {
+  margin: 0;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--amber);
+}
+
+.emi-card__badge {
+  background: var(--amber);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+.emi-card__amount {
+  margin: 10px 0 5px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.emi-card__track {
+  width: 100%;
+  background-color: color-mix(in srgb, var(--amber) 22%, transparent);
+  border-radius: 4px;
+  height: 7px;
+  margin-top: 10px;
+}
+
+.emi-card__fill {
+  background-color: var(--amber);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.emi-card__note {
+  color: var(--brass-deep);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.emi-card__btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  background: var(--amber);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  transition: filter 0.15s ease;
+}
+
+.emi-card__btn:hover { filter: brightness(1.08); }
+
+.fin-empty {
+  color: var(--ink-muted);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* ============================================================
+   RECENT TRANSACTIONS — passbook table
+   ============================================================ */
+
+.txn-card {
+  margin-top: 30px;
+  background: var(--surface);
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  max-width: 100%;
+  overflow-x: auto;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+.txn-card h3 {
+  min-width: 300px;
+}
+
+.txn-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 600px;
+  font-size: 14px;
+}
+
+.txn-table thead tr {
+  background-color: var(--surface-alt);
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.txn-table th {
+  padding: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.txn-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.txn-date { color: var(--ink-muted); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+.txn-category { font-weight: 600; }
+.txn-note { color: var(--ink-muted); }
+
+.txn-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.txn-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.txn-empty {
+  padding: 18px;
+  text-align: center;
+  color: var(--ink-muted);
+}

@@ -1,0 +1,108 @@
+<div style="background: #f4f6f8; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-family: Arial, sans-serif;">
+  <h3 style="margin-top: 0;">➕ Add New Transaction</h3>
+  
+  <form (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+    
+    <!-- Date -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Date</label>
+      <input type="date" [(ngModel)]="transaction.transaction_date" name="transactionDate" required
+             style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 130px;">
+    </div>
+
+    <!-- Amount -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Amount (₹)</label>
+      <input type="number" [(ngModel)]="transaction.amount" name="amount" required
+             style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 120px;">
+    </div>
+
+    <!-- Type -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Type</label>
+      <select [(ngModel)]="transaction.transaction_type" name="type"
+              style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="DEBIT">Debit (Spend)</option>
+        <option value="CREDIT">Credit (Income)</option>
+        <option value="TRANSFER">Self Transfer (Bank to Bank)</option>
+        <option value="CC_BILL">Credit Card Bill Payment</option>
+      </select>
+    </div>
+
+    <!-- Category -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Category</label>
+      <input type="text" [(ngModel)]="transaction.category" name="category" placeholder="e.g. Petrol, Salary" required
+             style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 150px;">
+    </div>
+
+    <!-- Source Type -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Paid Via</label>
+      <select [(ngModel)]="transaction.source_type" name="sourceType"
+              style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="ACCOUNT">Bank Account</option>
+        <option value="CREDIT_CARD">Credit Card</option>
+      </select>
+    </div>
+
+    <!-- Source ID (Mapping to Database IDs) -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Which Bank/Card?</label>
+      <select [(ngModel)]="transaction.source_id" name="sourceId"
+              style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        
+        <!-- Agar Account select kiya hai -->
+        @if (transaction.source_type === 'ACCOUNT') {
+          <option [ngValue]="1">Federal Jupiter</option>
+          <option [ngValue]="2">HDFC Bank</option>
+          <option [ngValue]="3">Bandhan Bank</option>
+        }
+        
+        <!-- Agar Card select kiya hai -->
+        @if (transaction.source_type === 'CREDIT_CARD') {
+          <option [ngValue]="1">Utkarsh SuperMoney</option>
+          <option [ngValue]="2">Slice CC</option>
+          <option [ngValue]="3">Bandhan Mastercard</option>
+        }
+      </select>
+    </div>
+
+    <!-- TARGET SELECTION (Yeh sirf tab dikhega jab Transfer ya CC_BILL select hoga) -->
+    @if (transaction.transaction_type === 'TRANSFER' || transaction.transaction_type === 'CC_BILL') {
+      <div style="display: flex; flex-direction: column; background-color: #e3f2fd; padding: 5px 10px; border-radius: 4px;">
+        <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #1565c0;">To Where (Target)?</label>
+        <select [(ngModel)]="transaction.transfer_target_id" name="targetId" required
+                style="padding: 8px; border: 1px solid #1565c0; border-radius: 4px;">
+          
+          <!-- Bank-to-Bank Transfer ke options -->
+          @if (transaction.transaction_type === 'TRANSFER') {
+            <option [ngValue]="1">Federal Jupiter</option>
+            <option [ngValue]="2">HDFC Bank</option>
+            <option [ngValue]="3">Bandhan Bank</option>
+          }
+          
+          <!-- Credit Card Bill Payment ke options -->
+          @if (transaction.transaction_type === 'CC_BILL') {
+            <option [ngValue]="1">Utkarsh SuperMoney</option>
+            <option [ngValue]="2">Slice CC</option>
+            <option [ngValue]="3">Bandhan Mastercard</option>
+          }
+        </select>
+      </div>
+    }
+
+    <!-- Description -->
+    <div style="display: flex; flex-direction: column;">
+      <label style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">Note</label>
+      <input type="text" [(ngModel)]="transaction.description" name="description" placeholder="Optional details..."
+             style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 150px;">
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" [disabled]="isSubmitting"
+            style="padding: 9px 20px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+      {{ isSubmitting ? 'Saving...' : 'Save' }}
+    </button>
+  </form>
+</div>
