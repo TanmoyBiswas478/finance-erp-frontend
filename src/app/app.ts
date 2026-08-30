@@ -1,13 +1,12 @@
 import { Component } from '@angular/core';
-import { DashboardComponent } from './components/dashboard/dashboard';
+import { RouterOutlet } from '@angular/router'; // 🔥 YEH ADD KIYA
 import { ToastComponent } from './components/toast/toast'; // Path check kar lena
-
-import { TransactionFormComponent } from './components/transaction-form/transaction-form';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [DashboardComponent,TransactionFormComponent,ToastComponent],
+  // 🔥 Dashboard aur TransactionForm hata diya, RouterOutlet laga diya
+  imports: [RouterOutlet, ToastComponent],
   templateUrl: './app.html', 
   styleUrl: './app.css'
 })
