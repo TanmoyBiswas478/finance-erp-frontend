@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api';
 import Chart from 'chart.js/auto';
 
-// NAYE IMPORTS PDF aur Excel ke liye
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -18,8 +17,9 @@ import * as XLSX from 'xlsx';
 export class DashboardComponent implements OnInit {
   dashboardData: any = null;
   isLoading: boolean = true;
-  chart: any = null; 
-  isDarkMode: boolean = false; // NAYA: Dark mode state track karne ke liye
+  expenseChart: any = null; 
+  overviewChart: any = null; // NAYA: Income vs Expense Chart
+  isDarkMode: boolean = false; 
 
   constructor(private apiService: ApiService, private cdr: ChangeDetectorRef) {}
 
@@ -36,7 +36,7 @@ export class DashboardComponent implements OnInit {
         this.isLoading = false;
         
         this.cdr.detectChanges(); 
-        this.renderChart();
+        this.renderCharts(); // Naya function call
       },
       error: (error) => {
         console.error('Error fetching data:', error);
@@ -46,33 +46,46 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  renderChart() {
-    if (this.chart) {
-      this.chart.destroy();
-    }
+  renderCharts() {
+    if (this.expenseChart) this.expenseChart.destroy();
+    if (this.overviewChart) this.overviewChart.destroy();
+
+    // 1. Overview Chart (Income vs Expense)
+    const income = this.dashboardData.current_month_income || 0;
+    const expense = this.dashboardData.current_month_expense || 0;
+
+    this.overviewChart = new Chart('overviewChart', {
+      type: 'doughnut',
+      data: {
+        labels: ['Income (Credit)', 'Expense (Debit)'],
+        datasets: [{
+          data: [income, expense],
+          backgroundColor: ['#4BC0C0', '#FF6384'], // Green & Red
+          hoverOffset: 4
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // 2. Category Expense Chart
     const categoryData = this.dashboardData.category_expenses;
     if (!categoryData || categoryData.length === 0) return;
 
     const labels = categoryData.map((item: any) => item.category);
     const data = categoryData.map((item: any) => item.total);
 
-    this.chart = new Chart('expenseChart', {
+    this.expenseChart = new Chart('expenseChart', {
       type: 'doughnut',
       data: {
         labels: labels,
         datasets: [{
           label: 'Total Spend (₹)',
           data: data,
-          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+          backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#9966FF', '#FF9F40'],
           hoverOffset: 4
         }]
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'right' }
-        }
-      }
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
   }
 
@@ -100,10 +113,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // ==========================================
-  // NAYE FUNCTIONS: Dark Mode, PDF & Excel
-  // ==========================================
-
   toggleDarkMode() {
     this.isDarkMode = !this.isDarkMode;
     if (this.isDarkMode) {
@@ -122,11 +131,12 @@ export class DashboardComponent implements OnInit {
     const doc = new jsPDF();
     doc.text('Financial ERP Ledger Report', 14, 15);
 
+    // FIXED: API se aane wale naye keys map kiye
     const tableData = this.dashboardData.recent_transactions.map((t: any) => [
-      t.created_at ? t.created_at.split('T')[0] : '--',
-      t.category,
-      t.description || '--',
-      t.transaction_type,
+      t.date ? t.date.split('T')[0] : '--',
+      t.category || 'Uncategorized',
+      t.note || '--',
+      t.type || '--',
       `INR ${t.amount}`
     ]);
 
