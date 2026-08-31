@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -10,23 +10,62 @@ export class ApiService {
 
   constructor(private http: HttpClient) { }
 
-  // 1. Dashboard data fetch karne ke liye (Jo pehle banaya tha)
+  private getAuthHeaders() {
+    const token = localStorage.getItem('erp_token');
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
   getDashboardData(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/dashboard`);
+    return this.http.get(`${this.baseUrl}/dashboard`, { headers: this.getAuthHeaders() });
   }
 
-  // 2. Nayi transaction insert karne ke liye (NAYA FUNCTION)
+  // ==========================================
+  // TRANSACTIONS APIs
+  // ==========================================
   addTransaction(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/transactions`, data);
+    return this.http.post(`${this.baseUrl}/transactions`, data, { headers: this.getAuthHeaders() });
   }
 
-  // CC Statement Generate API Call
+  updateTransaction(id: number, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/transactions/${id}`, data, { headers: this.getAuthHeaders() });
+  }
+
+  deleteTransaction(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/transactions/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  // ==========================================
+  // ACCOUNTS APIs
+  // ==========================================
+  updateAccount(id: number, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/accounts/${id}`, data, { headers: this.getAuthHeaders() });
+  }
+
+  deleteAccount(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/accounts/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  // ==========================================
+  // CREDIT CARDS APIs
+  // ==========================================
+  updateCreditCard(id: number, data: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/credit-cards/${id}`, data, { headers: this.getAuthHeaders() });
+  }
+
+  deleteCreditCard(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/credit-cards/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  // ==========================================
+  // EMI & STATEMENTS APIs
+  // ==========================================
   generateStatement(cardId: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/credit-cards/${cardId}/generate-statement`, {});
+    return this.http.post(`${this.baseUrl}/credit-cards/${cardId}/generate-statement`, {}, { headers: this.getAuthHeaders() });
   }
 
-  // EMI Pay API Call
   payEmi(emiId: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/emis/${emiId}/pay`, {});
+    return this.http.post(`${this.baseUrl}/emis/${emiId}/pay`, {}, { headers: this.getAuthHeaders() });
   }
 }

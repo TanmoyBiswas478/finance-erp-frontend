@@ -4,7 +4,7 @@ import { Routes } from '@angular/router';
 import { DashboardComponent } from './components/dashboard/dashboard';
 import { LoginComponent } from './pages/login/login';
 import { RegisterComponent } from './pages/register/register';
-import { AuthGuard } from './guards/auth-guard';
+import { AuthGuard } from './guards/auth-guard'; // 🔒 AuthGuard import kiya
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },

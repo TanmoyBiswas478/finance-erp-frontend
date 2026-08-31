@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core'; 
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
+import { FormsModule } from '@angular/forms'; 
 import { ApiService } from '../../services/api';
 import Chart from 'chart.js/auto';
 
@@ -10,7 +11,7 @@ import * as XLSX from 'xlsx';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule], 
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css']
 })
@@ -18,8 +19,11 @@ export class DashboardComponent implements OnInit {
   dashboardData: any = null;
   isLoading: boolean = true;
   expenseChart: any = null; 
-  overviewChart: any = null; // NAYA: Income vs Expense Chart
+  overviewChart: any = null; 
   isDarkMode: boolean = false; 
+
+  activeModal: 'account' | 'card' | 'transaction' | 'add_transaction' | null = null;
+  formData: any = {};
 
   constructor(private apiService: ApiService, private cdr: ChangeDetectorRef) {}
 
@@ -28,15 +32,13 @@ export class DashboardComponent implements OnInit {
   }
 
   fetchData() {
-    console.log("API Call Start ho rahi hai...");
+    this.isLoading = true;
     this.apiService.getDashboardData().subscribe({
       next: (response) => {
-        console.log("Data aa gaya: ", response);
         this.dashboardData = response.data;
         this.isLoading = false;
-        
         this.cdr.detectChanges(); 
-        this.renderCharts(); // Naya function call
+        this.renderCharts(); 
       },
       error: (error) => {
         console.error('Error fetching data:', error);
@@ -50,7 +52,6 @@ export class DashboardComponent implements OnInit {
     if (this.expenseChart) this.expenseChart.destroy();
     if (this.overviewChart) this.overviewChart.destroy();
 
-    // 1. Overview Chart (Income vs Expense)
     const income = this.dashboardData.current_month_income || 0;
     const expense = this.dashboardData.current_month_expense || 0;
 
@@ -60,14 +61,13 @@ export class DashboardComponent implements OnInit {
         labels: ['Income (Credit)', 'Expense (Debit)'],
         datasets: [{
           data: [income, expense],
-          backgroundColor: ['#4BC0C0', '#FF6384'], // Green & Red
+          backgroundColor: ['#4BC0C0', '#FF6384'], 
           hoverOffset: 4
         }]
       },
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    // 2. Category Expense Chart
     const categoryData = this.dashboardData.category_expenses;
     if (!categoryData || categoryData.length === 0) return;
 
@@ -92,7 +92,7 @@ export class DashboardComponent implements OnInit {
   generateBill(cardId: number) {
     if(confirm("Are you sure you want to generate the statement for this card?")) {
       this.apiService.generateStatement(cardId).subscribe({
-        next: (res) => {
+        next: () => {
           alert("🧾 Statement Generated Successfully!");
           this.fetchData(); 
         },
@@ -104,12 +104,63 @@ export class DashboardComponent implements OnInit {
   payEmi(emiId: number) {
     if(confirm("Process this month's EMI payment?")) {
       this.apiService.payEmi(emiId).subscribe({
-        next: (res) => {
+        next: () => {
           alert("✅ EMI Installment Paid Successfully!");
           this.fetchData(); 
         },
         error: (err) => console.error(err)
       });
+    }
+  }
+
+  openEditModal(type: 'account' | 'card' | 'transaction' | 'add_transaction', data: any) {
+    this.activeModal = type;
+    if (type === 'add_transaction') {
+      this.formData = {
+        amount: null,
+        type: 'EXPENSE',
+        source_type: 'ACCOUNT',
+        source_name: '',
+        category: 'Manual Entry',
+        date: formatDate(new Date(), 'yyyy-MM-dd', 'en')
+      };
+    } else {
+      this.formData = { ...data }; 
+    }
+  }
+
+  closeModal() {
+    this.activeModal = null;
+    this.formData = {};
+  }
+
+  saveData() {
+    if (this.activeModal === 'add_transaction') {
+      this.apiService.addTransaction(this.formData).subscribe(() => this.onSaveSuccess());
+    } else if (this.activeModal === 'account') {
+      this.apiService.updateAccount(this.formData.id, this.formData).subscribe(() => this.onSaveSuccess());
+    } else if (this.activeModal === 'card') {
+      this.apiService.updateCreditCard(this.formData.id, this.formData).subscribe(() => this.onSaveSuccess());
+    } else if (this.activeModal === 'transaction') {
+      this.apiService.updateTransaction(this.formData.id, this.formData).subscribe(() => this.onSaveSuccess());
+    }
+  }
+
+  onSaveSuccess() {
+    alert("✅ Data updated successfully!");
+    this.closeModal();
+    this.fetchData();
+  }
+
+  deleteItem(type: 'account' | 'card' | 'transaction', id: number) {
+    if(confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
+      if (type === 'account') {
+        this.apiService.deleteAccount(id).subscribe(() => this.fetchData());
+      } else if (type === 'card') {
+        this.apiService.deleteCreditCard(id).subscribe(() => this.fetchData());
+      } else if (type === 'transaction') {
+        this.apiService.deleteTransaction(id).subscribe(() => this.fetchData());
+      }
     }
   }
 
@@ -127,25 +178,16 @@ export class DashboardComponent implements OnInit {
       alert("No data available to export!");
       return;
     }
-
     const doc = new jsPDF();
     doc.text('Financial ERP Ledger Report', 14, 15);
-
-    // FIXED: API se aane wale naye keys map kiye
     const tableData = this.dashboardData.recent_transactions.map((t: any) => [
-      t.date ? t.date.split('T')[0] : '--',
+      t.date ? t.date.replace('T', ' ').substring(0, 19) : '--',
       t.category || 'Uncategorized',
       t.note || '--',
       t.type || '--',
       `INR ${t.amount}`
     ]);
-
-    autoTable(doc, {
-      head: [['Date', 'Category', 'Note', 'Type', 'Amount']],
-      body: tableData,
-      startY: 25,
-    });
-
+    autoTable(doc, { head: [['Date & Time', 'Category', 'Note', 'Type', 'Amount']], body: tableData, startY: 25 });
     doc.save('Finance_Report.pdf');
   }
 
@@ -154,7 +196,6 @@ export class DashboardComponent implements OnInit {
       alert("No data available to export!");
       return;
     }
-
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.dashboardData.recent_transactions);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
