@@ -128,7 +128,6 @@
         <tbody>
           @for (txn of dashboardData.recent_transactions; track txn.id) {
             <tr>
-              <!-- 🎯 UPDATED: Added dd/MM/yyyy with hh:mm:ss a time format -->
               <td>{{ txn.date | date:'dd/MM/yyyy, hh:mm:ss a' }}</td>
               <td>{{ txn.category }}</td>
               <td>{{ txn.note }}</td>
@@ -181,10 +180,24 @@
               <option value="CREDIT_CARD">Credit Card</option>
             </select>
           </div>
+          
+          <!-- 🎯 FIXED: Dynamic Dropdown instead of Text Input -->
           <div class="form-group">
-            <label>Source Name (Exact Match)</label>
-            <input type="text" name="source_name" [(ngModel)]="formData.source_name" placeholder="e.g., HDFC or Slice CC" class="modal-input" required>
+            <label>Source</label>
+            <select name="source_name" [(ngModel)]="formData.source_name" class="modal-input" required>
+              <option value="" disabled selected>Select Account/Card</option>
+              @if (formData.source_type === 'ACCOUNT') {
+                @for (acc of dashboardData.accounts; track acc.id) {
+                  <option [value]="acc.bank_name">{{ acc.bank_name }}</option>
+                }
+              } @else {
+                @for (card of dashboardData.credit_cards; track card.id) {
+                  <option [value]="card.card_name">{{ card.card_name }}</option>
+                }
+              }
+            </select>
           </div>
+
           <div class="form-group">
             <label>Category</label>
             <input type="text" name="category" [(ngModel)]="formData.category" class="modal-input" required>
